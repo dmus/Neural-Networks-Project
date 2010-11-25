@@ -3,6 +3,7 @@ package tictactoe;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import org.encog.engine.network.activation.ActivationTANH;
@@ -21,15 +22,42 @@ import org.encog.neural.networks.training.propagation.resilient.ResilientPropaga
  */
 public class QPlayer implements Player {
 
+	/**
+	 * Player's name
+	 */
 	private String name;
+	
+	/**
+	 * Random generator
+	 */
 	private Random random = new Random();
+	
+	/**
+	 * Neural network to approximate q-value for each move
+	 */
 	private Map<Move, BasicNetwork> networks = new HashMap<Move, BasicNetwork>(9);
-	private double t;
-	private double a = 1, b = 0.99, c = 0.002;
+	
+	/**
+	 * Parameters for exploration vs exploitation dilemma
+	 */
+	private double t, a = 1, b = 0.99, c = 0.002;
+	
+	/**
+	 * Number of moves done in current game
+	 */
 	private int movesDone = 0;
+	
+	/**
+	 * Number of training games played
+	 */
 	private int gamesPlayed = 0;
+	
+	/**
+	 * Learning rate
+	 */
 	private double learningRate = 0.1;
 	private boolean explore = true;
+	private boolean learn = true;
 	
 	private double qOutput;
 	private Move selectedMove;
@@ -63,6 +91,13 @@ public class QPlayer implements Player {
 		if (movesDone > 0)
 			observeResultingState(game);
 		
+		boolean exploreInMove = explore && learn;
+		
+		if (exploreInMove) {
+			exploreInMove = exploreInMove;
+			//System.out.println("hoi");
+		}
+		
 		state = game.getState();
 		List<Move> possible = game.getPossibleMoves();
 		NeuralData state = new BasicNeuralData(this.state);
@@ -78,7 +113,7 @@ public class QPlayer implements Player {
 			double qValue = output.getData(0);
 			qValues.put(action, qValue);
 			
-			if (!explore) {
+			if (!exploreInMove) {
 				if (bestQValue == null || qValue > bestQValue) {
 					bestQValue = qValue;
 					selectedMove = action;
@@ -88,9 +123,9 @@ public class QPlayer implements Player {
 			}
 		}
 		
-		if (explore) {
+		if (exploreInMove) {
 			double choice = random.nextDouble();
-			double sum = 0.0;
+			double sum = 0;
 			
 			for (Move action : possible) {
 				double p = Math.exp(qValues.get(action) / t) / divisor;
@@ -108,7 +143,10 @@ public class QPlayer implements Player {
 		return selectedMove;
 	}
 
-	public void observeResultingState(TicTacToe game) {
+	private void observeResultingState(TicTacToe game) {
+		if (!learn)
+			return;
+		
 		// reward received
 		double reward = 0.0;
 		if (game.hasEnded() && game.isDraw() == false) {
@@ -139,22 +177,45 @@ public class QPlayer implements Player {
 		);
 		final Train train = new Backpropagation(networks.get(selectedMove), trainingSet);
 		train.iteration();
+		double afterTraining = networks.get(selectedMove).compute(new BasicNeuralData(state)).getData(0);
 	}
 	
 	@Override
 	public void onGameOver(TicTacToe game) {
-		observeResultingState(game);
-		
-		gamesPlayed++;
 		movesDone = 0;
+		
+		if (!learn)
+			return;
+		
+		observeResultingState(game);
+		gamesPlayed++;
+		
 		t = a * Math.pow(b, gamesPlayed);
-		if (t <= c) {
-			explore = false;
-		}
+		explore = (t <= c);
 	}
+	
+	
+	public void setLearn(boolean learn) {
+		this.learn = learn;
+	}
+	
 
 	@Override
 	public String getName() {
 		return name;
+	}
+	
+	/**
+	 * Useful for debugging purposes
+	 */
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Q-values for each move");
+		
+		for (Entry<Move, BasicNetwork> entry : networks.entrySet()) {
+			sb.append(entry.getKey() + ": " + entry.getValue());
+		}
+		
+		return sb.toString();
 	}
 }

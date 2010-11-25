@@ -1,6 +1,5 @@
 package tictactoe;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -159,6 +158,7 @@ public class TicTacToe {
 			for (int j = 0; j < 3; j++) {
 				if (grid[i][j] == null) {
 					state[k] = 0.0;
+					k++;
 					continue;
 				}
 				state[k] = (grid[i][j]) ? 1.0 : -1.0;
@@ -168,23 +168,27 @@ public class TicTacToe {
 		return state;
 	}
 	
-	public void print(PrintStream out) {
+	@Override
+	public String toString() {
+		String string = "";
 		for (int i = 0; i < 3; i++) {
 			for(int j = 0; j < 3; j++) {
 				if (grid[i][j] == null) {
-					out.print("_ ");
+					string += "_ ";
 					continue;
 				}
 				
-				out.print(grid[i][j] ? "X " : "O ");
+				string += (grid[i][j] ? "X " : "O ");
 			}
-			out.println();
+			string += "\n";
 		}
+		
+		return string;
 	}
 	
 	public static void main(String[] args) {
 		TicTacToe ticTacToe = new TicTacToe(new RandomPlayer(), new HumanPlayer());
 		ticTacToe.start();
-		ticTacToe.print(System.out);
+		System.out.print(ticTacToe.toString());
 	}
 }

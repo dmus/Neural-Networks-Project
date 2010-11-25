@@ -11,7 +11,7 @@ public class HumanPlayer implements Player {
 
 	@Override
 	public Move doMove(TicTacToe game) {
-		game.print(System.out);
+		System.out.print(game.toString());
 		Scanner in = new Scanner(System.in);
 		System.out.println("Enter row:");
 		int x = in.nextInt();
@@ -22,7 +22,7 @@ public class HumanPlayer implements Player {
 
 	@Override
 	public void onGameOver(TicTacToe game) {
-		game.print(System.out);
+		System.out.print(game.toString());
 
 		if (game.getWinner() == this)
 			System.out.println("You won!!");

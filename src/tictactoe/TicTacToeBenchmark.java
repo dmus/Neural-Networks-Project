@@ -6,19 +6,24 @@ import org.encog.neural.networks.training.CalculateScore;
 public class TicTacToeBenchmark implements CalculateScore {
 
 	private int games;
+	private Player opponent;
 	
 	public TicTacToeBenchmark(int games) {
-		this.games = games;
+		this(games, new RandomPlayer());
 	}
 	
-	@Override
-	public double calculateScore(BasicNetwork network) {
+	public TicTacToeBenchmark(int games, Player opponent) {
+		this.games = games;
+		this.opponent = opponent;
+	}
+	
+	public double calculateScore(Player player) {
 		double score = 0;
 		
 		for (int i = 0; i < games; i++) {
-			NeatPlayer player = new NeatPlayer(network);
-			TicTacToe game = new TicTacToe(player, new RandomPlayer());
+			TicTacToe game = new TicTacToe(player, opponent);
 			game.start();
+
 			if (game.getWinner() == player)
 				score++;
 			else if (game.getWinner() != null)
@@ -28,8 +33,12 @@ public class TicTacToeBenchmark implements CalculateScore {
 		// normalize score
 		score = score / (games * 2) + 0.5 * (games / 100);
 		
-		//System.out.println(score);
-		return Math.random();
+		return score;
+	}
+	
+	@Override
+	public double calculateScore(BasicNetwork network) {
+		return calculateScore(new NeatPlayer(network));
 	}
 
 	@Override
