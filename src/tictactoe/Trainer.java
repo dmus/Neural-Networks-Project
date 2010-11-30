@@ -5,10 +5,10 @@ import org.encog.util.logging.Logging;
 public class Trainer {
 	public static void main(String[] args) {
 		Logging.stopConsoleLogging();
-		TicTacToeBenchmark benchmark = new TicTacToeBenchmark(100, new BoringPlayer());
+		TicTacToeBenchmark benchmark = new TicTacToeBenchmark(100, new RandomPlayer());
 		
 		QPlayer p1 = new QPlayer("P1");
-		Player p2 = new BoringPlayer();//new QPlayer("P2");
+		Player p2 = new RandomPlayer();//new QPlayer("P2");
 		
 		p1.setLearn(false);
 		System.out.println("Score before training: " + benchmark.calculateScore(p1));

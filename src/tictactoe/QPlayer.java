@@ -3,7 +3,6 @@ package tictactoe;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 
 import org.encog.engine.network.activation.ActivationTANH;
@@ -15,7 +14,6 @@ import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
 import org.encog.neural.networks.training.Train;
 import org.encog.neural.networks.training.propagation.back.Backpropagation;
-import org.encog.neural.networks.training.propagation.resilient.ResilientPropagation;
 
 /**
  * Player learns by playing games (Q-learning)
@@ -93,11 +91,6 @@ public class QPlayer implements Player {
 		
 		boolean exploreInMove = explore && learn;
 		
-		if (exploreInMove) {
-			exploreInMove = exploreInMove;
-			//System.out.println("hoi");
-		}
-		
 		state = game.getState();
 		List<Move> possible = game.getPossibleMoves();
 		NeuralData state = new BasicNeuralData(this.state);
@@ -137,7 +130,11 @@ public class QPlayer implements Player {
 				}
 			}
 		}
-			
+		
+		if (selectedMove == null) {
+			System.out.println("Hoij");
+		}
+		
 		qOutput = qValues.get(selectedMove);
 		movesDone++;
 		return selectedMove;
@@ -175,9 +172,8 @@ public class QPlayer implements Player {
 			new double[][]{ state }, 
 			new double[][] { {qTarget} }
 		);
-		final Train train = new Backpropagation(networks.get(selectedMove), trainingSet);
+		final Train train = new Backpropagation(networks.get(selectedMove), trainingSet, 0.2, 0.9);
 		train.iteration();
-		double afterTraining = networks.get(selectedMove).compute(new BasicNeuralData(state)).getData(0);
 	}
 	
 	@Override
@@ -191,7 +187,7 @@ public class QPlayer implements Player {
 		gamesPlayed++;
 		
 		t = a * Math.pow(b, gamesPlayed);
-		explore = (t <= c);
+		explore = (t > c);
 	}
 	
 	
@@ -203,19 +199,5 @@ public class QPlayer implements Player {
 	@Override
 	public String getName() {
 		return name;
-	}
-	
-	/**
-	 * Useful for debugging purposes
-	 */
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Q-values for each move");
-		
-		for (Entry<Move, BasicNetwork> entry : networks.entrySet()) {
-			sb.append(entry.getKey() + ": " + entry.getValue());
-		}
-		
-		return sb.toString();
 	}
 }

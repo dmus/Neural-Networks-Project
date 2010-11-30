@@ -7,7 +7,9 @@ import org.encog.neural.data.basic.BasicNeuralDataSet;
 import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
 import org.encog.neural.networks.training.Train;
+import org.encog.neural.networks.training.lma.LevenbergMarquardtTraining;
 import org.encog.neural.networks.training.propagation.back.Backpropagation;
+import org.encog.neural.networks.training.propagation.resilient.ResilientPropagation;
 import org.junit.Test;
 
 
@@ -27,13 +29,13 @@ public class TrainingTest {
 		double beforeTraining = network.compute(new BasicNeuralData(state)).getData(0);
 		
 		NeuralDataSet trainingSet = new BasicNeuralDataSet(
-			new double[][]{ state, state }, 
-			new double[][] { {0.25}, {0.25} }
+			new double[][] { state }, 
+			new double[][] { {0.25} }
 		);
 		
-		final Train train = new Backpropagation(network, trainingSet);
-		train.iteration(5);
-		train.iteration(5);
+		final Train train = new Backpropagation(network, trainingSet, 0.4, 0.0);
+		train.iteration();
+		//train.iteration(50);
 
 		double afterTraining = network.compute(new BasicNeuralData(state)).getData(0);
 		
