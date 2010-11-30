@@ -108,7 +108,6 @@ public class NeatDriver extends Controller {
 	
 	private void tearDown() {
 		try {
-			score = score;
 			System.out.println("Score: " + score);
 			exchanger.exchange(score);
 		} catch (InterruptedException e) {
