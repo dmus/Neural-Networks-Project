@@ -31,8 +31,8 @@ public class TicTacToeBenchmark implements CalculateScore {
 		}
 
 		// normalize score
-		score = score / (games * 2) + 0.5 * (games / 100);
-		
+		//score = score / (games * 2) + 0.5 * (games / 100);
+		score = score / games;
 		return score;
 	}
 	
