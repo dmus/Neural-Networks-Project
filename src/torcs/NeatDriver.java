@@ -7,7 +7,11 @@ import org.encog.neural.data.basic.BasicNeuralData;
 import org.encog.neural.networks.BasicNetwork;
 import org.encog.persist.EncogPersistedCollection;
 
-
+/**
+ * Neat Driver
+ * @author Derk
+ *
+ */
 public class NeatDriver extends Controller {
 
 	private Exchanger<Object> exchanger;
