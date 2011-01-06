@@ -22,7 +22,7 @@ public class NeatTrainer {
 			epoch++;
 		} while (epoch <= 1000);
 
-		final EncogPersistedCollection encog = new EncogPersistedCollection("network.eg");
+		final EncogPersistedCollection encog = new EncogPersistedCollection("data/tictactoe/network.eg");
 		encog.create();
 		encog.add("network", train.getNetwork());
 	}

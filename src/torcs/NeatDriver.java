@@ -5,6 +5,7 @@ import java.util.concurrent.Exchanger;
 import org.encog.neural.data.NeuralData;
 import org.encog.neural.data.basic.BasicNeuralData;
 import org.encog.neural.networks.BasicNetwork;
+import org.encog.persist.EncogPersistedCollection;
 
 
 public class NeatDriver extends Controller {
@@ -13,30 +14,45 @@ public class NeatDriver extends Controller {
 	
 	private BasicNetwork network;
 	
+	private Trainer trainer;
+	
+	boolean training = false;
+	
+	private int episode = 0;
+	
 	private double score;
+	
 	/**
 	 * Gear changing constants
 	 */
 	private final int[] gearUp = {7500, 7500, 7500, 7500, 7500, 0};
 	private final int[] gearDown = {0, 2500, 3000, 3000, 3500, 3500};
 	
-	public NeatDriver() {
-		exchanger = new Exchanger<Object>();
-		
-		// setup training thread
-		Thread trainingThread = new Thread(new Trainer(exchanger));
-		trainingThread.start();
-		
-		setUp();
+	public NeatDriver() throws InterruptedException {
+		if (training) {
+			exchanger = new Exchanger<Object>();
+			
+			// setup training thread
+			trainer = new Trainer(exchanger);
+			Thread trainingThread = new Thread(trainer);
+			trainingThread.setDaemon(true);
+			trainingThread.start();
+			
+			setUp();
+		} else {
+			final EncogPersistedCollection encog = new EncogPersistedCollection(
+				"data/torcs/NeatNetwork.eg");
+			network = (BasicNetwork) encog.find("network");
+		}
 	}
 	
 	private void setUp() {
 		try {
 			score = 0;
+			episode++;
 			network = (BasicNetwork) exchanger.exchange(null);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -70,12 +86,16 @@ public class NeatDriver extends Controller {
 	
 	@Override
 	public Action control(SensorModel sensorModel) {
-		score = sensorModel.getDistanceRaced();
 		Action action = new Action();
-		
-		// TODO by collision give penalty and go to restore mode
+
+		// if car is outside track game is over
 		if (sensorModel.getTrackPosition() < -1 || sensorModel.getTrackPosition() > 1) {
-			score -= 1000; // penalty
+			action.restartRace = true;
+			return action;
+		}
+		
+		if (sensorModel.getLastLapTime() != 0.0) {
+			System.out.println("Lap completed!!!!" + sensorModel.getLastLapTime());
 			action.restartRace = true;
 			return action;
 		}
@@ -87,44 +107,58 @@ public class NeatDriver extends Controller {
 		double frontSensor = Math.max(Math.max(sensors[8], sensors[10]), sensors[9]);
 		
 		NeuralData input = new BasicNeuralData(new double[] {
-			//sensors[0],
-			sensors[3],
-			//sensors[6],
-			frontSensor,
-			//sensors[12],
-			sensors[15],
-			//sensors[18]
+			sensors[0] / 200,
+			sensors[3] / 200,
+			sensors[6] / 200,
+			frontSensor / 200,
+			sensors[12] / 200,
+			sensors[15] / 200,
+			sensors[18] / 200
 		});
 		
 		NeuralData output = network.compute(input);
 		//System.out.println(output);
 		action.steering = output.getData(0);
 		
-		if (sensorModel.getSpeed() < 20)
+		if (sensorModel.getSpeed() < 15)
 			action.accelerate = 1;
-
+		
+		score = sensorModel.getDistanceFromStartLine() / 2057.56;
+		
         return action;
 	}
 	
 	private void tearDown() {
 		try {
-			System.out.println("Score: " + score);
+			System.out.println(episode + ": score: " + score);
 			exchanger.exchange(score);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
 	public void reset() {
-		tearDown();
-		setUp();
+		if (training) {
+			tearDown();
+			setUp();
+		}
 	}
 
 	@Override
 	public void shutdown() {
-		tearDown();
-		System.out.println("Driver says: Race abandoned");
+		if (training) {
+			// save best network
+			final EncogPersistedCollection encog = new EncogPersistedCollection(
+					"data/torcs/NeatNetwork.eg");
+			encog.create();
+			encog.add("network", trainer.getNetwork());
+		}
+	}
+	
+	@Override
+	protected void finalize() {
+		System.out.println("Finalize called");
+		shutdown();
 	}
 }

@@ -1,5 +1,6 @@
 package torcs;
 
+import org.encog.engine.network.activation.ActivationLinear;
 import org.encog.engine.network.activation.ActivationSigmoid;
 import org.encog.engine.network.activation.ActivationSoftMax;
 import org.encog.engine.network.activation.ActivationTANH;
@@ -23,9 +24,9 @@ public class QDriver extends Controller {
 	
 	public QDriver() {
 		network = new BasicNetwork();
-		network.addLayer(new BasicLayer(null, true, 3));
-		network.addLayer(new BasicLayer(new ActivationSigmoid(), true, 5));
-		network.addLayer(new BasicLayer(new ActivationSoftMax(), true, 2));
+		network.addLayer(new BasicLayer(null, true, 7));
+		network.addLayer(new BasicLayer(new ActivationLinear(), true, 5));
+		network.addLayer(new BasicLayer(new ActivationLinear(), true, 1));
 		network.getStructure().finalizeStructure();
 		network.reset();
 	}
@@ -71,17 +72,20 @@ public class QDriver extends Controller {
 		double frontSensor = Math.max(Math.max(sensors[8], sensors[10]), sensors[9]);
 		
 		NeuralData input = new BasicNeuralData(new double[] {
-			// sensors[0],
-			sensors[3],
-			// sensors[6],
-			frontSensor,
-			// sensors[12],
-			sensors[15],
-			// sensors[18]
+			sensors[0] / 200,
+			sensors[3] / 200,
+			sensors[6] / 200,
+			frontSensor / 200,
+			sensors[12] / 200,
+			sensors[15] / 200,
+			sensors[18] / 200
 		});
 		
 		NeuralData output = network.compute(input);
 		action.steering = output.getData(1) - output.getData(0);
+		
+		if (sensorModel.getSpeed() < 10)
+			action.accelerate = 1;
 		
         return action;
 	}
